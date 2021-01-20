@@ -11,7 +11,7 @@ namespace JobSender.Models.Sender
     {
         public void Start(MyJob j)
         {
-            RecurringJob.AddOrUpdate<SenderMail>(j.Title, m => m.SendEmailAsync(j.Message), j.Cron);
+            RecurringJob.AddOrUpdate<SenderMail>(j.Title, m => m.SendEmailAsync(j.Message), j.Cron, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
         }
         public async Task SendEmailAsync(Message j)
         {

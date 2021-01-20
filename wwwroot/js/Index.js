@@ -1,5 +1,8 @@
 ﻿$(function () {
-
+    DevExpress.localization.locale("ru");
+    $("#homeButton").dxButton({
+        icon: "fas fa-home" // Font Awesome 5
+    });
     $("#gridJobs").dxDataGrid({
         dataSource: DevExpress.data.AspNet.createStore({
             key: "ID",
@@ -48,6 +51,15 @@
         },
         columns: [
             {
+                type: "buttons",
+                buttons: ["edit", "delete",
+                    {
+                        name: 'changePassword',
+                        hint: 'Установить пароль',
+                        icon: "homeButton"
+                    }]
+            },
+            {
                 dataField: "Title",
                 caption:"Идентификатор",
                 validationRules: [{
@@ -57,18 +69,27 @@
             },
             {
                 dataField: "Cron",
-                caption: "Частота",
+                caption: "Расписание(в Cron)",
                 validationRules: [{
                     type: "required",
-                    message: "Частота должена быть заполнена."
+                    message: "Частота должна быть заполнена."
                 }],
+                visible: false
+            },
+            {
+                dataField: "CronDesc",
+                caption: "Расписание",
+                validationRules: [{
+                    type: "required",
+                    message: "Расписание должно быть заполнено."
+                }]
             },
             {
                 dataField: "Message.To",
                 caption: "Получатели",
                 validationRules: [{
                     type: "required",
-                    message: "Получатели должены быть заполнены."
+                    message: "Получатели должны быть заполнены."
                 }],
             },
             {
@@ -76,7 +97,7 @@
                 caption: "Тема сообщения",
                 validationRules: [{
                     type: "required",
-                    message: "Тема сообщения должена быть заполнена."
+                    message: "Тема сообщения должна быть заполнена."
                 }],
                 visible: false
             },
@@ -85,9 +106,13 @@
                 caption: "Текст сообщения",
                 validationRules: [{
                     type: "required",
-                    message: "Сообщение должено быть заполнено."
+                    message: "Сообщение должно быть заполнено."
                 }],
                 visible: false
+            },
+            {
+                dataField: "Next",
+                caption: "Время следующего исполнения"
             }
         ],
         showBorders: true

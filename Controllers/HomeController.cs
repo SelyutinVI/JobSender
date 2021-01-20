@@ -1,4 +1,5 @@
-﻿using DevExtreme.AspNet.Data;
+﻿using CronExpressionDescriptor;
+using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Hangfire;
 using JobSender.Data;
@@ -57,8 +58,20 @@ namespace JobSender.Controllers
         {
             var newJob = new MyJob();
             JsonConvert.PopulateObject(values, newJob);
+            try
+            {
+                newJob.CronDesc =  ExpressionDescriptor.GetDescription(newJob.Cron, new Options()
+                {
+                    DayOfWeekStartIndexZero = true,
+                    Use24HourTimeFormat = true,
+                    Locale = "ru"
+                });
+            } 
+            catch
+            {
+                return StatusCode(409, "Cron-расписание задано неверно!");
+            }
             await _MyDbContext.Jobs.AddAsync(newJob);
-            await _MyDbContext.Messages.AddAsync(newJob.Message);
             await _MyDbContext.SaveChangesAsync();
             SenderMail a = new SenderMail();
             a.Start(newJob);
@@ -69,6 +82,7 @@ namespace JobSender.Controllers
         public async Task<ActionResult> DeleteJob(int key)
         {
             RecurringJob.RemoveIfExists(_MyDbContext.Jobs.FirstOrDefault(j => j.ID==key).Title);
+            _MyDbContext.Messages.Remove(await _MyDbContext.Messages.FirstOrDefaultAsync(j => j.ID == _MyDbContext.Jobs.FirstOrDefault(j => j.ID == key).ID));
             _MyDbContext.Jobs.Remove(await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.ID == key));
             await _MyDbContext.SaveChangesAsync();
             return Ok();
@@ -79,6 +93,19 @@ namespace JobSender.Controllers
         {
             var newValue = await _MyDbContext.Jobs.Include(j=>j.Message).FirstOrDefaultAsync(j => j.ID == key);
             JsonConvert.PopulateObject(values, newValue);
+            try
+            {
+                newValue.CronDesc = ExpressionDescriptor.GetDescription(newValue.Cron, new Options()
+                {
+                    DayOfWeekStartIndexZero = true,
+                    Use24HourTimeFormat = true,
+                    Locale = "ru"
+                });
+            }
+            catch
+            {
+                return StatusCode(409, "Cron-расписание задано неверно!");
+            }
             SenderMail a = new SenderMail();
             a.Start(newValue);
             _MyDbContext.Jobs.Update(newValue);
