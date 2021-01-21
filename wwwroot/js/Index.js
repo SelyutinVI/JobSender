@@ -1,9 +1,7 @@
 ﻿$(function () {
+
     DevExpress.localization.locale("ru");
-    $("#homeButton").dxButton({
-        icon: "fas fa-home" // Font Awesome 5
-    });
-    $("#gridJobs").dxDataGrid({
+        $("#gridJobs").dxDataGrid({
         dataSource: DevExpress.data.AspNet.createStore({
             key: "ID",
             loadUrl: "/LoadJobs",
@@ -27,17 +25,27 @@
             },
             form: {
                 colCount: 1,
-                items: ["Title", "Cron",
-                        {
-                            dataField: "Message.To",
-                            //editorType: "dxTagBox",
-                            //editorOptions: {
-                            //    items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
-                            //    acceptCustomValue: true
+                items: ["Title",
+                    {
+                        dataField: "Cron",
+                        editorType: "dxAutocomplete",
+                        editorOptions: {
+                            //onValueChanged:  function (data) {
+                            //    alert(data.value);
+                            //    g.option("CronDesc.text", data.value);
                             //}
-                        },
-                        "Message.Subject",
-                        {
+                        }
+                    },
+                    {
+                        dataField: "Message.To",
+                        //editorType: "dxTagBox",
+                        //editorOptions: {
+                        //    items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
+                        //    acceptCustomValue: true
+                        //}
+                    },
+                    "Message.Subject",
+                    {
                         dataField: "Message.Body",
                         editorType: "dxTextArea",
                         editorOptions: {
@@ -48,7 +56,29 @@
             allowUpdating: true,
             allowDeleting: true,
             allowAdding: true
+            },
+
+        export: {
+            enabled: true,
+            allowExportSelectedData: true
+            },
+
+        onExporting: function (e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('Выгрузка');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Выгрузка в Excel.xlsx');
+                });
+            });
+            e.cancel = true;
         },
+
         columns: [
             {
                 type: "buttons",
@@ -78,11 +108,7 @@
             },
             {
                 dataField: "CronDesc",
-                caption: "Расписание",
-                validationRules: [{
-                    type: "required",
-                    message: "Расписание должно быть заполнено."
-                }]
+                caption: "Расписание"
             },
             {
                 dataField: "Message.To",
@@ -114,7 +140,8 @@
                 dataField: "Next",
                 caption: "Время следующего исполнения"
             }
-        ],
+            ],
+
         showBorders: true
     });
 });
