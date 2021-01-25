@@ -30,11 +30,16 @@
                         dataField: "Cron",
                         editorType: "dxAutocomplete",
                         editorOptions: {
-                            //onValueChanged:  function (data) {
-                            //    alert(data.value);
-                            //    g.option("CronDesc.text", data.value);
-                            //}
+                            onValueChanged:  function (data) {
+                                descriptCron(data.value);
+                            }
                         }
+                    },
+                    {
+                        dataField: "CronDesc",
+                        value: "123",
+                        disabled: true
+
                     },
                     {
                         dataField: "Message.To",
@@ -143,5 +148,15 @@
             ],
 
         showBorders: true
-    });
+        });
+
+    function descriptCron(data) {
+        $.ajax({
+            url: "/qwer/"+data,
+            type: 'POST',
+            xhrFields: { withCredentials: true }
+        }).then(function (result) {
+            alert(result);
+        });
+    }
 });

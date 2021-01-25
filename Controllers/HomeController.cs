@@ -112,5 +112,26 @@ namespace JobSender.Controllers
             await _MyDbContext.SaveChangesAsync();
             return Ok();
         }
+
+
+
+        [HttpPost("qwer/{values}")]
+        public string qwer(string values)
+        {
+            try
+            {
+                return (ExpressionDescriptor.GetDescription(values, new Options()
+                {
+                    DayOfWeekStartIndexZero = true,
+                    Use24HourTimeFormat = true,
+                    Locale = "ru"
+                }));
+            }
+            catch
+            {
+                return "Cron-расписание задано неверно!";
+            }
+
+        }
     }
 }
