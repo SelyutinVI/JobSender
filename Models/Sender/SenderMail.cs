@@ -20,8 +20,7 @@ namespace JobSender.Models.Sender
                 var mes = new MimeMessage();
 
                 mes.From.Add(new MailboxAddress("sunscreed1@gmail.com"));
-                var adresses = j.To.Split(";");
-                foreach (var to in adresses)
+                foreach (var to in j.To)
                 {
                     mes.To.Add(new MailboxAddress(to.Trim()));
                 }

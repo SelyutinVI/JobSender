@@ -1,18 +1,20 @@
 ﻿$(function () {
-
     DevExpress.localization.locale("ru");
-        $("#gridJobs").dxDataGrid({
-        dataSource: DevExpress.data.AspNet.createStore({
-            key: "ID",
-            loadUrl: "/LoadJobs",
-            insertUrl: "/InsertJob",
-            updateUrl: "/UpdateJob",
-            deleteUrl: "/DeleteJob",
-            onBeforeSend: function (method, ajaxOptions) {
-                ajaxOptions.xhrFields = { withCredentials: true };
-            },
-            
-        }),
+    var gj = $("#gridJobs").dxDataGrid({
+        dataSource: {
+            store: DevExpress.data.AspNet.createStore({
+                key: "Title",
+                loadUrl: "/LoadJobs",
+                insertUrl: "/InsertJob",
+                updateUrl: "/UpdateJob",
+                deleteUrl: "/DeleteJob",
+                onBeforeSend: function (method, ajaxOptions) {
+                    ajaxOptions.xhrFields = { withCredentials: true };
+                }
+            }),
+            reshapeOnPush: true
+        },
+        repaintChangesOnly: true,
         remoteOperations: true,
         editing: {
             mode: "popup",
@@ -23,31 +25,40 @@
                 width: 700,
                 height: 525,
             },
+
             form: {
                 colCount: 1,
                 items: ["Title",
                     {
                         dataField: "Cron",
-                        editorType: "dxAutocomplete",
+                        editorType: "dxTextBox",
                         editorOptions: {
-                            onValueChanged:  function (data) {
-                                descriptCron(data.value);
+                            onChange: function (data) {
+                                var a = data.component.option('value');
+                                descriptCron(a);
                             }
-                        }
+                        },
+
                     },
                     {
                         dataField: "CronDesc",
-                        value: "123",
-                        disabled: true
+                        editorType: "dxTextBox",
+                        editorOptions: {
+                            disabled: true,
+                            name: "descCron"
+                        }
 
                     },
                     {
                         dataField: "Message.To",
-                        //editorType: "dxTagBox",
-                        //editorOptions: {
-                        //    items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
-                        //    acceptCustomValue: true
-                        //}
+                        editorType: "dxTagBox",
+                        editorOptions: {
+                            items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
+                            acceptCustomValue: true,
+                            //onCustomItemCreating: function (args) {
+                            //    return false;
+                            //}
+                        }
                     },
                     "Message.Subject",
                     {
@@ -58,15 +69,16 @@
                         }
                     }]
             },
+
             allowUpdating: true,
             allowDeleting: true,
             allowAdding: true
-            },
+        },
 
         export: {
             enabled: true,
             allowExportSelectedData: true
-            },
+        },
 
         onExporting: function (e) {
             var workbook = new ExcelJS.Workbook();
@@ -90,24 +102,23 @@
                 buttons: ["edit", "delete",
                     {
                         name: 'changePassword',
-                        hint: 'Установить пароль',
-                        icon: "homeButton"
+                        hint: 'Пауза'
                     }]
             },
             {
                 dataField: "Title",
-                caption:"Идентификатор",
+                caption: "Идентификатор",
                 validationRules: [{
                     type: "required",
                     message: "Идентификатор должен быть заполнен."
-                }],
+                }]
             },
             {
                 dataField: "Cron",
                 caption: "Расписание(в Cron)",
                 validationRules: [{
                     type: "required",
-                    message: "Частота должна быть заполнена."
+                    message: "Расписание должно быть заполнено."
                 }],
                 visible: false
             },
@@ -121,7 +132,11 @@
                 validationRules: [{
                     type: "required",
                     message: "Получатели должны быть заполнены."
-                }],
+                },
+                    {
+                        type: "email",
+                        message:"Введите корректный email."
+                    }],
             },
             {
                 dataField: "Message.Subject",
@@ -145,18 +160,51 @@
                 dataField: "Next",
                 caption: "Время следующего исполнения"
             }
-            ],
+        ],
 
         showBorders: true
-        });
+    });
 
     function descriptCron(data) {
         $.ajax({
-            url: "/qwer/"+data,
+            url: "/qwer/" + data,
             type: 'POST',
             xhrFields: { withCredentials: true }
         }).then(function (result) {
-            alert(result);
+            $('input[name="descCron"]').val(result);
         });
     }
+
+    function EmailsValid() {
+
+    }
+
+
+
+    var connection = new signalR.HubConnectionBuilder()
+        .withUrl("/first", {
+            skipNegotiation: true,
+            transport: signalR.HttpTransportType.WebSockets
+        })
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    var store = $("#gridJobs").dxDataGrid("getDataSource").store();
+
+
+    connection.start()
+        .then(function () {
+            connection.on("update", function (key, data) {
+                store.push([{ type: "update", key: key, data: data }]);                
+            });    
+            
+            connection.on("insert", function (data) {
+                store.push([{ type: "insert", data: data }]);
+            });
+
+            connection.on("remove", function (key) {
+                store.push([{ type: "remove", key: key }]);
+            });
+        });
+
 });

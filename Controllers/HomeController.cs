@@ -16,6 +16,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
+using JobSender.Models.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
 namespace JobSender.Controllers
 {
@@ -23,11 +26,12 @@ namespace JobSender.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private MyDbContext _MyDbContext;
-
-        public HomeController(ILogger<HomeController> logger, MyDbContext MyDbContext)
+        IHubContext<FirstHub> _hubContext ;
+        public HomeController(ILogger<HomeController> logger, MyDbContext MyDbContext, IHubContext<FirstHub> hubcontext)
         {
             _logger = logger;
             _MyDbContext = MyDbContext;
+            _hubContext = hubcontext;
         }
         public IActionResult Index()
         {
@@ -58,6 +62,10 @@ namespace JobSender.Controllers
         {
             var newJob = new MyJob();
             JsonConvert.PopulateObject(values, newJob);
+            newJob.Title = newJob.Title.Trim();
+
+            if (await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == newJob.Title) != null)
+                return StatusCode(409, "Задание с таким идентификатором уже существует");
             try
             {
                 newJob.CronDesc =  ExpressionDescriptor.GetDescription(newJob.Cron, new Options()
@@ -71,28 +79,54 @@ namespace JobSender.Controllers
             {
                 return StatusCode(409, "Cron-расписание задано неверно!");
             }
+
+
             await _MyDbContext.Jobs.AddAsync(newJob);
             await _MyDbContext.SaveChangesAsync();
             SenderMail a = new SenderMail();
             a.Start(newJob);
+
+
+            await _hubContext.Clients.All.SendAsync("insert", newJob);
+
+
             return Ok();
         }
+
+
 
         [HttpDelete("DeleteJob")]
-        public async Task<ActionResult> DeleteJob(int key)
+        public async Task<ActionResult> DeleteJob(string key)
         {
-            RecurringJob.RemoveIfExists(_MyDbContext.Jobs.FirstOrDefault(j => j.ID==key).Title);
-            _MyDbContext.Messages.Remove(await _MyDbContext.Messages.FirstOrDefaultAsync(j => j.ID == _MyDbContext.Jobs.FirstOrDefault(j => j.ID == key).ID));
-            _MyDbContext.Jobs.Remove(await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.ID == key));
+
+            RecurringJob.RemoveIfExists(_MyDbContext.Jobs.FirstOrDefault(j => j.Title==key).Title);
+
+
+            _MyDbContext.Messages.Remove(await _MyDbContext.Messages.FirstOrDefaultAsync(j => j.ID == _MyDbContext.Jobs.FirstOrDefault(j => j.Title == key).Message.ID));
+            _MyDbContext.Jobs.Remove(await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == key));
             await _MyDbContext.SaveChangesAsync();
+
+
+            await _hubContext.Clients.All.SendAsync("remove", key);
             return Ok();
         }
 
+
+
         [HttpPut("UpdateJob")]
-        public async Task<ActionResult> UpdateJob(int key, string values)
+        public async Task<ActionResult> UpdateJob(string key, string values)
         {
-            var newValue = await _MyDbContext.Jobs.Include(j=>j.Message).FirstOrDefaultAsync(j => j.ID == key);
+
+            var newValue = await _MyDbContext.Jobs.Include(j=>j.Message).FirstOrDefaultAsync(j => j.Title == key);
             JsonConvert.PopulateObject(values, newValue);
+
+            //kastil'
+            var kastil = new MyJob();
+            JsonConvert.PopulateObject(values, kastil);
+            if(kastil.Message != null)
+                if (kastil.Message.To!=null)
+                    newValue.Message.To = kastil.Message.To;
+
             try
             {
                 newValue.CronDesc = ExpressionDescriptor.GetDescription(newValue.Cron, new Options()
@@ -106,18 +140,25 @@ namespace JobSender.Controllers
             {
                 return StatusCode(409, "Cron-расписание задано неверно!");
             }
+
+
             SenderMail a = new SenderMail();
             a.Start(newValue);
             _MyDbContext.Jobs.Update(newValue);
             await _MyDbContext.SaveChangesAsync();
+
+
+            await _hubContext.Clients.All.SendAsync("update", key, newValue);
+
             return Ok();
         }
 
 
 
         [HttpPost("qwer/{values}")]
-        public string qwer(string values)
+        public async Task<string> qwer(string values)
         {
+
             try
             {
                 return (ExpressionDescriptor.GetDescription(values, new Options()

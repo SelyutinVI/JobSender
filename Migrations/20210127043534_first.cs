@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace JobSender.Migrations
 {
-    public partial class pstg : Migration
+    public partial class first : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -13,7 +14,7 @@ namespace JobSender.Migrations
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    To = table.Column<string>(type: "text", nullable: true),
+                    To = table.Column<List<string>>(type: "text[]", nullable: true),
                     Subject = table.Column<string>(type: "text", nullable: true),
                     Body = table.Column<string>(type: "text", nullable: true)
                 },
@@ -26,15 +27,14 @@ namespace JobSender.Migrations
                 name: "Jobs",
                 columns: table => new
                 {
-                    ID = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Title = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "text", nullable: false),
                     Cron = table.Column<string>(type: "text", nullable: true),
+                    CronDesc = table.Column<string>(type: "text", nullable: true),
                     MessageID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Jobs", x => x.ID);
+                    table.PrimaryKey("PK_Jobs", x => x.Title);
                     table.ForeignKey(
                         name: "FK_Jobs_Messages_MessageID",
                         column: x => x.MessageID,

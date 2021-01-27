@@ -9,7 +9,7 @@ namespace JobSender.Models
     public class Message
     {
         public int ID { get; set; }
-        public String To { get; set; }
+        public List<String> To { get; set; }
         public String Subject { get; set; }
         public String Body { get; set; }
     }
