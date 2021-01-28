@@ -8,7 +8,7 @@
                 insertUrl: "/InsertJob",
                 updateUrl: "/UpdateJob",
                 deleteUrl: "/DeleteJob",
-                onBeforeSend: function (method, ajaxOptions, values) {
+                onBeforeSend: function (method, ajaxOptions) {
                     ajaxOptions.xhrFields = { withCredentials: true, };
 
                     if(method != "load"){ 
@@ -133,16 +133,29 @@
                 caption: "Расписание"
             },
             {
+                dataField: "Next",
+                caption: "Время следующего исполнения"
+            },
+            {
+                dataField: "ObjectType",
+                caption: "Тип задачи",
+                validationRules: [{
+                    type: "required",
+                    message: "Тема сообщения должна быть заполнена."
+                }]
+            },
+            {
                 dataField: "ObjectJson.To",
                 caption: "Получатели",
                 validationRules: [{
                     type: "required",
                     message: "Получатели должны быть заполнены."
                 },
-                    {
-                        type: "email",
-                        message:"Введите корректный email."
-                    }],
+                {
+                    type: "email",
+                    message: "Введите корректный email."
+                }],
+                visible: false
             },
             {
                 dataField: "ObjectJson.Subject",
@@ -161,10 +174,6 @@
                     message: "Сообщение должно быть заполнено."
                 }],
                 visible: false
-            },
-            {
-                dataField: "Next",
-                caption: "Время следующего исполнения"
             }
         ],
 

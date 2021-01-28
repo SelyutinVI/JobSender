@@ -49,6 +49,7 @@ namespace JobSender.Models
                         RecurringJob.AddOrUpdate<Tester>(this.Title, m => m.Test(), this.Cron, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
                         break;
                     }
+
             }
 
         }
