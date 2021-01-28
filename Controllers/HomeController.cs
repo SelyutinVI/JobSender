@@ -3,8 +3,6 @@ using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Hangfire;
 using JobSender.Data;
-using JobSender.Models;
-using JobSender.Models.Sender;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,6 +17,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using JobSender.Models.SignalR;
 using Microsoft.AspNetCore.SignalR;
+using JobSender.Models;
 
 namespace JobSender.Controllers
 {
@@ -52,7 +51,7 @@ namespace JobSender.Controllers
         [HttpGet("LoadJobs")]
         public async Task<object> LoadJobs(DataSourceLoadOptions loadOptions)
         {
-            var Q = _MyDbContext.Jobs.Include(j => j.Message);
+            var Q = _MyDbContext.Jobs;
             var query = await DataSourceLoader.LoadAsync(Q, loadOptions);
             return query;
         }
@@ -62,8 +61,9 @@ namespace JobSender.Controllers
         {
             var newJob = new MyJob();
             JsonConvert.PopulateObject(values, newJob);
-            newJob.Title = newJob.Title.Trim();
 
+            newJob.Title = newJob.Title.Trim();
+            newJob.ObjectType = "Message";
             if (await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == newJob.Title) != null)
                 return StatusCode(409, "Задание с таким идентификатором уже существует");
             try
@@ -83,8 +83,7 @@ namespace JobSender.Controllers
 
             await _MyDbContext.Jobs.AddAsync(newJob);
             await _MyDbContext.SaveChangesAsync();
-            SenderMail a = new SenderMail();
-            a.Start(newJob);
+            newJob.Start();
 
 
             await _hubContext.Clients.All.SendAsync("insert", newJob);
@@ -101,8 +100,6 @@ namespace JobSender.Controllers
 
             RecurringJob.RemoveIfExists(_MyDbContext.Jobs.FirstOrDefault(j => j.Title==key).Title);
 
-
-            _MyDbContext.Messages.Remove(await _MyDbContext.Messages.FirstOrDefaultAsync(j => j.ID == _MyDbContext.Jobs.FirstOrDefault(j => j.Title == key).Message.ID));
             _MyDbContext.Jobs.Remove(await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == key));
             await _MyDbContext.SaveChangesAsync();
 
@@ -117,15 +114,8 @@ namespace JobSender.Controllers
         public async Task<ActionResult> UpdateJob(string key, string values)
         {
 
-            var newValue = await _MyDbContext.Jobs.Include(j=>j.Message).FirstOrDefaultAsync(j => j.Title == key);
+            var newValue = await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == key);
             JsonConvert.PopulateObject(values, newValue);
-
-            //kastil'
-            var kastil = new MyJob();
-            JsonConvert.PopulateObject(values, kastil);
-            if(kastil.Message != null)
-                if (kastil.Message.To!=null)
-                    newValue.Message.To = kastil.Message.To;
 
             try
             {
@@ -140,10 +130,9 @@ namespace JobSender.Controllers
             {
                 return StatusCode(409, "Cron-расписание задано неверно!");
             }
-
-
-            SenderMail a = new SenderMail();
-            a.Start(newValue);
+            
+            
+            newValue.Start();
             _MyDbContext.Jobs.Update(newValue);
             await _MyDbContext.SaveChangesAsync();
 

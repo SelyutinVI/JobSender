@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace JobSender.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20210127043534_first")]
-    partial class first
+    [Migration("20210127064330_tes")]
+    partial class tes
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -56,6 +56,9 @@ namespace JobSender.Migrations
 
                     b.Property<int?>("MessageID")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ObjectJson")
+                        .HasColumnType("text");
 
                     b.HasKey("Title");
 

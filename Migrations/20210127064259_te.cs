@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace JobSender.Migrations
 {
-    public partial class first : Migration
+    public partial class te : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -30,7 +30,8 @@ namespace JobSender.Migrations
                     Title = table.Column<string>(type: "text", nullable: false),
                     Cron = table.Column<string>(type: "text", nullable: true),
                     CronDesc = table.Column<string>(type: "text", nullable: true),
-                    MessageID = table.Column<int>(type: "integer", nullable: true)
+                    MessageID = table.Column<int>(type: "integer", nullable: true),
+                    ObjectJson = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -30,7 +30,7 @@ namespace JobSender
             services
                 .AddControllersWithViews()
                 .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
-            services.AddHangfire(x => x.UsePostgreSqlStorage("Host=localhost;Port=5432;Database=Sender;Username=postgres;Password=123456789"));
+            services.AddHangfire(x => x.UsePostgreSqlStorage("Host=localhost;Port=5432;Database=EmailSender;Username=postgres;Password=123456789"));
             
             services.AddHangfireServer();
             services.AddDbContext<MyDbContext>();

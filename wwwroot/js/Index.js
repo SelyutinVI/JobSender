@@ -8,8 +8,14 @@
                 insertUrl: "/InsertJob",
                 updateUrl: "/UpdateJob",
                 deleteUrl: "/DeleteJob",
-                onBeforeSend: function (method, ajaxOptions) {
-                    ajaxOptions.xhrFields = { withCredentials: true };
+                onBeforeSend: function (method, ajaxOptions, values) {
+                    ajaxOptions.xhrFields = { withCredentials: true, };
+
+                    if(method != "load"){ 
+                    var b = JSON.parse(ajaxOptions.data.values);
+                    b.ObjectJson = JSON.stringify(b.ObjectJson);
+                    ajaxOptions.data.values = JSON.stringify(b);
+                    }
                 }
             }),
             reshapeOnPush: true
@@ -50,7 +56,7 @@
 
                     },
                     {
-                        dataField: "Message.To",
+                        dataField: "ObjectJson.To",
                         editorType: "dxTagBox",
                         editorOptions: {
                             items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
@@ -60,9 +66,9 @@
                             //}
                         }
                     },
-                    "Message.Subject",
+                    "ObjectJson.Subject",
                     {
-                        dataField: "Message.Body",
+                        dataField: "ObjectJson.Body",
                         editorType: "dxTextArea",
                         editorOptions: {
                             height: 100
@@ -127,7 +133,7 @@
                 caption: "Расписание"
             },
             {
-                dataField: "Message.To",
+                dataField: "ObjectJson.To",
                 caption: "Получатели",
                 validationRules: [{
                     type: "required",
@@ -139,7 +145,7 @@
                     }],
             },
             {
-                dataField: "Message.Subject",
+                dataField: "ObjectJson.Subject",
                 caption: "Тема сообщения",
                 validationRules: [{
                     type: "required",
@@ -148,7 +154,7 @@
                 visible: false
             },
             {
-                dataField: "Message.Body",
+                dataField: "ObjectJson.Body",
                 caption: "Текст сообщения",
                 validationRules: [{
                     type: "required",
@@ -175,9 +181,6 @@
         });
     }
 
-    function EmailsValid() {
-
-    }
 
 
 

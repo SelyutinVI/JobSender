@@ -13,7 +13,7 @@ namespace JobSender.Data
         public DbSet<MyJob> Jobs{ get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=Sender;Username=postgres;Password=123456789");
+            optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=EmailSender;Username=postgres;Password=123456789");
         }
     }
 }
