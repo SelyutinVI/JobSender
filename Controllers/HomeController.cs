@@ -144,8 +144,8 @@ namespace JobSender.Controllers
 
 
 
-        [HttpPost("qwer/{values}")]
-        public async Task<string> qwer(string values)
+        [HttpPost("Descriptor/{values}")]
+        public async Task<string> Descriptor(string values)
         {
 
             try

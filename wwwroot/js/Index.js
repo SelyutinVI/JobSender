@@ -11,10 +11,10 @@
                 onBeforeSend: function (method, ajaxOptions) {
                     ajaxOptions.xhrFields = { withCredentials: true, };
 
-                    if(method != "load"){ 
-                    var b = JSON.parse(ajaxOptions.data.values);
-                    b.ObjectJson = JSON.stringify(b.ObjectJson);
-                    ajaxOptions.data.values = JSON.stringify(b);
+                    if (method != "load") {
+                        var b = JSON.parse(ajaxOptions.data.values);
+                        b.ObjectJson = JSON.stringify(b.ObjectJson);
+                        ajaxOptions.data.values = JSON.stringify(b);
                     }
                 }
             }),
@@ -28,8 +28,7 @@
             popup: {
                 title: "Задача",
                 showTitle: true,
-                width: 700,
-                height: 525,
+                width: 700
             },
 
             form: {
@@ -56,24 +55,57 @@
 
                     },
                     {
-                        dataField: "ObjectJson.To",
-                        editorType: "dxTagBox",
+                        dataField: "ObjectType",
+                        editorType: "dxSelectBox",
                         editorOptions: {
-                            items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
-                            acceptCustomValue: true,
-                            //onCustomItemCreating: function (args) {
-                            //    return false;
-                            //}
-                        }
+                            items: ["Message", "Tester"],
+                            onValueChanged: function (data) {
+                                changeObject();
+                            }
+                        },
+
                     },
-                    "ObjectJson.Subject",
                     {
-                        dataField: "ObjectJson.Body",
-                        editorType: "dxTextArea",
-                        editorOptions: {
-                            height: 100
-                        }
-                    }]
+
+                        itemType: "group",
+                        name: "Message",
+                        caption: "Сообщение",
+                        items: [
+                            {
+                            dataField: "ObjectJson.To",
+                            editorType: "dxTagBox",
+                            editorOptions: {
+                                items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
+                                acceptCustomValue: true
+                                }
+                            },
+                            "ObjectJson.Subject",
+                            {
+                                dataField: "ObjectJson.Body",
+                                editorType: "dxTextArea",
+                                editorOptions: {
+                                    height: 100
+                                }
+                            }],
+                        visible:true
+                    },
+                    {
+                        itemType: "group",
+                        name: "Tester",
+                        caption: "Тестовый класс",
+                        items: [
+                            "ObjectJson.Zdohni",
+                            {
+                                dataField: "ObjectJson.Tvar",
+                                editorType: "dxTextArea",
+                                editorOptions: {
+                                    height: 100
+                                }
+                            }],
+                        visible:false
+                    }
+]
+                
             },
 
             allowUpdating: true,
@@ -141,7 +173,7 @@
                 caption: "Тип задачи",
                 validationRules: [{
                     type: "required",
-                    message: "Тема сообщения должна быть заполнена."
+                    message: "Выберите тип задачи"
                 }]
             },
             {
@@ -174,7 +206,25 @@
                     message: "Сообщение должно быть заполнено."
                 }],
                 visible: false
-            }
+            },
+            {
+                dataField: "ObjectJson.Body",
+                caption: "Текст сообщения",
+                validationRules: [{
+                    type: "required",
+                    message: "Сообщение должно быть заполнено."
+                }],
+                visible: false
+            },
+            {
+                dataField: "ObjectJson.Body",
+                caption: "Текст сообщения",
+                validationRules: [{
+                    type: "required",
+                    message: "Сообщение должно быть заполнено."
+                }],
+                visible: false
+            },
         ],
 
         showBorders: true
@@ -182,7 +232,7 @@
 
     function descriptCron(data) {
         $.ajax({
-            url: "/qwer/" + data,
+            url: "/Descriptor/" + data,
             type: 'POST',
             xhrFields: { withCredentials: true }
         }).then(function (result) {
@@ -218,5 +268,6 @@
                 store.push([{ type: "remove", key: key }]);
             });
         });
-
+    function changeObject() {
+    }
 });
