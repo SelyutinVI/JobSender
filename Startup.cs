@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
+using Hangfire.Dashboard.Management;
 using Hangfire.PostgreSql;
 using JobSender.Data;
 using JobSender.Models.SignalR;
@@ -30,7 +31,13 @@ namespace JobSender
             services
                 .AddControllersWithViews()
                 .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
-            services.AddHangfire(x => x.UsePostgreSqlStorage("Host=localhost;Port=5432;Database=EmailSender;Username=postgres;Password=123456789"));
+
+            services.AddHangfire(x => x
+            .UsePostgreSqlStorage("Host=localhost;Port=5432;Database=EmailSender;Username=postgres;Password=123456789")
+            .UseManagementPages(config => {
+                return config
+                    .SetCulture(new System.Globalization.CultureInfo("en-us"));
+                    }));
             
             services.AddHangfireServer();
             services.AddDbContext<MyDbContext>();
@@ -59,8 +66,12 @@ namespace JobSender
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapHub<FirstHub>("/first");
+
+                endpoints.MapHangfireDashboard();
             });
 
+
+            app.UseHangfireDashboard();
         }
     }
 }

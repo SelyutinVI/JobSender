@@ -1,6 +1,10 @@
 ﻿$(function () {
+    var myObject; //объект задачи
+    var objectType; //тип объекта задачи
+    var editForm; //форма редактирования задачи
+
     DevExpress.localization.locale("ru");
-    var gj = $("#gridJobs").dxDataGrid({
+    $("#gridJobs").dxDataGrid({
         dataSource: {
             store: DevExpress.data.AspNet.createStore({
                 key: "Title",
@@ -10,19 +14,13 @@
                 deleteUrl: "/DeleteJob",
                 onBeforeSend: function (method, ajaxOptions) {
                     ajaxOptions.xhrFields = { withCredentials: true, };
-
-                    if (method != "load") {
-                        var b = JSON.parse(ajaxOptions.data.values);
-                        b.ObjectJson = JSON.stringify(b.ObjectJson);
-                        ajaxOptions.data.values = JSON.stringify(b);
-                    }
                 }
             }),
             reshapeOnPush: true
         },
         repaintChangesOnly: true,
         remoteOperations: true,
-        editing: {
+        editing: {  
             mode: "popup",
             useIcons: true,
             popup: {
@@ -31,7 +29,7 @@
                 width: 700
             },
 
-            form: {
+            form: { 
                 colCount: 1,
                 items: ["Title",
                     {
@@ -55,57 +53,22 @@
 
                     },
                     {
-                        dataField: "ObjectType",
-                        editorType: "dxSelectBox",
-                        editorOptions: {
-                            items: ["Message", "Tester"],
-                            onValueChanged: function (data) {
-                                changeObject();
+                        dataField: "ObjectType"
+                    },
+                    {
+                        itemType: 'group',
+                        caption: "Параметры задачи",
+                        items: [{
+                            dataField: "ObjectJson",
+                            label: {
+                                visible:false
                             }
-                        },
+                        }]
 
-                    },
-                    {
-
-                        itemType: "group",
-                        name: "Message",
-                        caption: "Сообщение",
-                        items: [
-                            {
-                            dataField: "ObjectJson.To",
-                            editorType: "dxTagBox",
-                            editorOptions: {
-                                items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
-                                acceptCustomValue: true
-                                }
-                            },
-                            "ObjectJson.Subject",
-                            {
-                                dataField: "ObjectJson.Body",
-                                editorType: "dxTextArea",
-                                editorOptions: {
-                                    height: 100
-                                }
-                            }],
-                        visible:true
-                    },
-                    {
-                        itemType: "group",
-                        name: "Tester",
-                        caption: "Тестовый класс",
-                        items: [
-                            "ObjectJson.Zdohni",
-                            {
-                                dataField: "ObjectJson.Tvar",
-                                editorType: "dxTextArea",
-                                editorOptions: {
-                                    height: 100
-                                }
-                            }],
-                        visible:false
-                    }
-]
-                
+                    }],
+                onInitialized: function (e) {
+                    editForm = e.component;
+                }
             },
 
             allowUpdating: true,
@@ -139,9 +102,29 @@
                 type: "buttons",
                 buttons: ["edit", "delete",
                     {
-                        name: 'changePassword',
-                        hint: 'Пауза'
-                    }]
+                        icon: "fas fa-pause-circle",
+                        visible: function (e) {
+                            return e.row.data.Status;
+                        },
+                        hint: "Пауза",
+                        cssClass: 'dx-link',
+                        onClick: function (e) {
+                            jobStatus(e);
+                        }
+                    },
+                    {
+                        icon: 'video',
+                        visible: function (e) {
+                            return !e.row.data.Status;
+                        },
+                        hint: "Старт",
+                        cssClass: 'dx-link',
+                        onClick: function (e) {
+                            jobStatus(e);
+                        }
+                    }
+                ],
+
             },
             {
                 dataField: "Title",
@@ -171,60 +154,225 @@
             {
                 dataField: "ObjectType",
                 caption: "Тип задачи",
-                validationRules: [{
-                    type: "required",
-                    message: "Выберите тип задачи"
-                }]
-            },
-            {
-                dataField: "ObjectJson.To",
-                caption: "Получатели",
-                validationRules: [{
-                    type: "required",
-                    message: "Получатели должны быть заполнены."
+                editCellTemplate: function (cellElement, cellInfo) {
+                    $("<div />").dxSelectBox({
+                        name: "Type",
+                        items: [{ "name": "Сообщение", "value": "Message" }, { "name": "Тестер", "value": "Tester" }],
+                        displayExpr: "name",
+                        valueExpr: "value",
+                        onItemClick: function (data) {
+                            switch (data.itemData.value)
+                            {
+                                case "Message": {
+                                    myObject.option("formData", {"To": "", "Subject": "", "Body": "" });
+                                    var a = [
+                                        {
+                                            dataField: "To",
+                                            label: {
+                                                text:'Получатели'
+                                            },
+                                            editorType: "dxTagBox",
+                                            editorOptions: {
+                                                items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
+                                                acceptCustomValue: true                                               
+                                            }
+                                        },
+                                        {
+                                            dataField: "Subject",
+                                            label: {
+                                                text: 'Тема письма'
+                                            }
+                                        },
+                                        {
+                                            dataField: "Body",
+                                            label: {
+                                                text: 'Текст сообщения'
+                                            },
+                                            editorType: "dxTextArea",
+                                            editorOptions: {
+                                                height: 100
+                                            }
+                                        },
+                                        {
+                                            dataField: "Span",
+                                            label: {
+                                                text: 'Период загрузки'
+                                            },
+                                            editorType: "dxTextBox",
+                                            editorOptions: {
+                                                maskRules: {
+                                                    H: char => char >= 0 && char <= 2,
+                                                    h: (char, index, fullStr) => {
+                                                        if (fullStr[3] == '2')
+                                                            return [0, 1, 2, 3].includes(parseInt(char));
+                                                        else
+                                                            return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(parseInt(char));
+                                                    },
+                                                    M: char => char >= 0 && char <= 5,
+                                                    m: char => char >= 0 && char <= 9,
+                                                    D: char => char >= 0 && char <= 9,
+                                                    d: char => char >= 0 && char <= 9
+                                                },
+                                                mask: "Dd.Hh:Mm",
+                                                useMaskedValue: true
+                                            }
+                                        },
+                                        {
+                                            dataField: "Status",
+                                            label: {
+                                                text: 'При наличии данных'
+                                            },
+                                            editorType: "dxCheckBox"
+                                        }
+                                    ];
+                                    myObject.option("items",a);
+                                    break;
+                                }
+                                case "Tester": {
+                                    var a = [
+                                        {
+                                            dataField: "Key",
+                                            colSpan: 2
+                                        }];
+                                    myObject.option("items", a);
+                                    myObject.option("formData", { "Key": "" });
+                                    break;
+                                }
+                            };
+                            cellInfo.setValue(data.itemData.value);
+                        },
+                        onInitialized: function (e) {                            
+                            e.component.option("value", cellInfo.value)
+                        }
+                    }).appendTo(cellElement);
                 },
-                {
-                    type: "email",
-                    message: "Введите корректный email."
-                }],
-                visible: false
+                
+
             },
             {
-                dataField: "ObjectJson.Subject",
-                caption: "Тема сообщения",
-                validationRules: [{
-                    type: "required",
-                    message: "Тема сообщения должна быть заполнена."
-                }],
-                visible: false
+                dataField: "Status",
             },
             {
-                dataField: "ObjectJson.Body",
-                caption: "Текст сообщения",
-                validationRules: [{
-                    type: "required",
-                    message: "Сообщение должно быть заполнено."
-                }],
-                visible: false
-            },
-            {
-                dataField: "ObjectJson.Body",
-                caption: "Текст сообщения",
-                validationRules: [{
-                    type: "required",
-                    message: "Сообщение должно быть заполнено."
-                }],
-                visible: false
-            },
-            {
-                dataField: "ObjectJson.Body",
-                caption: "Текст сообщения",
-                validationRules: [{
-                    type: "required",
-                    message: "Сообщение должно быть заполнено."
-                }],
-                visible: false
-            },
+                dataField: "ObjectJson",
+                caption: "Параметры задачи",
+                editCellTemplate: function (cellElement, cellInfo) {
+
+                    $("<div />").dxForm({
+                        colCount:2,
+                        onInitialized: function (e) {
+                            myObject = e.component;
+                            if (cellInfo.value != undefined) {
+                                switch (cellInfo.row.data.ObjectType) {
+                                    case "Message":
+                                        {
+
+                                            var data = JSON.parse(cellInfo.value);
+                                            myObject.option("formData", data);
+
+                                            var a = [
+                                                {
+                                                    dataField: "To",
+                                                    label: {
+                                                        text: 'Получатели'
+                                                    },
+                                                    editorType: "dxTagBox",
+                                                    editorOptions: {
+                                                        items: ["azenshpis@gmail.com", "selyutinvi@gmail.com"],
+                                                        acceptCustomValue: true
+                                                    }
+                                                },
+                                                {
+                                                    dataField: "Subject",
+                                                    label: {
+                                                        text: 'Тема письма'
+                                                    }
+                                                },
+                                                {
+                                                    dataField: "Body",
+                                                    label: {
+                                                        text: 'Текст сообщения'
+                                                    },
+                                                    editorType: "dxTextArea",
+                                                    editorOptions: {
+                                                        height: 100
+                                                    }
+                                                },
+                                                {
+                                                    dataField: "Span",
+                                                    label: {
+                                                        text: 'Период'
+                                                    },
+                                                    editorType: "dxTextBox",
+                                                    editorOptions: {
+                                                        maskRules: {
+                                                            H: char => char >= 0 && char <= 2,
+                                                            h: (char, index, fullStr) => {
+                                                                if (fullStr[3] == '2')
+                                                                    return [0, 1, 2, 3].includes(parseInt(char));
+                                                                else
+                                                                    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(parseInt(char));
+                                                            },
+                                                            M: char => char >= 0 && char <= 5,
+                                                            m: char => char >= 0 && char <= 9,
+                                                            D: char => char >= 0 && char <= 9,
+                                                            d: char => char >= 0 && char <= 9,
+                                                        },
+                                                        mask: "Dd.Hh:Mm",
+                                                        useMaskedValue: true,
+                                                        maskInvalidMessage: "Ашибка!"
+                                                    }
+                                                },
+                                                {
+                                                    dataField: "Status",
+                                                    label: {
+                                                        text: 'При загрузке'
+                                                    },
+                                                    editorType: "dxCheckBox"
+                                                }
+                                            ];
+                                            myObject.option("items", a);
+
+
+                                            break;
+                                        }
+                                    case "Tester":
+                                        {
+                                            var data = JSON.parse(cellInfo.value);
+                                            myObject.option("formData", data);
+
+                                            var a = [{
+                                                dataField: "Key",
+                                                colSpan: 2
+                                            }];
+                                            myObject.option("items", a);
+
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            var data = JSON.parse(cellInfo.value);
+                                            $("<div />").dxForm({
+                                                formData: data,
+                                                onInitialized: function (e) {
+                                                    myObject = e.component;
+                                                }
+                                            }).appendTo(cellElement)
+                                            break;
+                                        }
+
+                                };
+                            };
+                        },
+                        onFieldDataChanged: function (e) {
+                            var a = JSON.stringify(myObject.option("formData"));
+                            cellInfo.setValue(a);
+                        },
+
+
+                    }).appendTo(cellElement);
+                    
+                }
+            }
         ],
 
         showBorders: true
@@ -239,7 +387,6 @@
             $('input[name="descCron"]').val(result);
         });
     }
-
 
 
 
@@ -268,6 +415,13 @@
                 store.push([{ type: "remove", key: key }]);
             });
         });
-    function changeObject() {
+
+    function jobStatus(e) {
+        $.ajax({
+            url: "/Pause/",
+            type: 'PUT',
+            data: { values: e.row.data.Status, key: e.row.key },
+            xhrFields: { withCredentials: true }
+        });
     }
 });

@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Hangfire.Storage;
 using JobSender.Models.JobSender;
+using Microsoft.AspNetCore.Mvc;
 using MimeKit;
 using Newtonsoft.Json;
 using Sender.Models;
@@ -20,13 +21,21 @@ namespace JobSender.Models
         public String CronDesc { get; set; }
         public String ObjectJson { get; set; }
         public String ObjectType { get; set; }
-
+        public bool Status { get; set; }
         public String Next {
+
             get
             {
+
                 using (var connection = JobStorage.Current.GetConnection())
                 {
-                    return connection.GetRecurringJobs().FirstOrDefault(p => p.Id == this.Title).NextExecution.Value.ToLocalTime().ToString();
+                    try
+                    {
+                        return connection.GetRecurringJobs().FirstOrDefault(p => p.Id == this.Title).NextExecution.Value.ToLocalTime().ToString();
+                    }
+                    catch {
+                        return "Задача приостановлена.";
+                    }
                 }
             }
         }
@@ -38,11 +47,12 @@ namespace JobSender.Models
                 case "Message":
                     {
                         var a = new Message();
-                        JsonConvert.PopulateObject(this.ObjectJson, a);
-                        RecurringJob.AddOrUpdate<Message>(this.Title, m => m.Send(a), this.Cron, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
+                            JsonConvert.PopulateObject(this.ObjectJson, a);
+                            RecurringJob.AddOrUpdate<Message>(this.Title, m => m.Send(a), this.Cron, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
+
                         break;
                     }
-                case "Object": 
+                case "Tester": 
                     {
                         var a = new Tester();
                         JsonConvert.PopulateObject(this.ObjectJson, a);
@@ -51,9 +61,15 @@ namespace JobSender.Models
                     }
 
             }
-
         }
 
 
+        public void Pause(bool f)
+        {
+            using (var connection = JobStorage.Current.GetConnection())
+            {
+                Hangfire.Dashboard.Management.Pages.RecurringJobsPageExtension.SetPauseState(connection, this.Title, f);
+            }
+        }
     }
 }

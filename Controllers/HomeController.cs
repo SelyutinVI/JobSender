@@ -34,7 +34,7 @@ namespace JobSender.Controllers
         }
         public IActionResult Index()
         {
-            return View();
+            return View();            
         }
 
         public IActionResult Privacy()
@@ -61,9 +61,8 @@ namespace JobSender.Controllers
         {
             var newJob = new MyJob();
             JsonConvert.PopulateObject(values, newJob);
-
+            newJob.Status = false;
             newJob.Title = newJob.Title.Trim();
-            newJob.ObjectType = "Message";
             if (await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == newJob.Title) != null)
                 return StatusCode(409, "Задание с таким идентификатором уже существует");
             try
@@ -83,7 +82,9 @@ namespace JobSender.Controllers
 
             await _MyDbContext.Jobs.AddAsync(newJob);
             await _MyDbContext.SaveChangesAsync();
+
             newJob.Start();
+            newJob.Pause(true);
 
 
             await _hubContext.Clients.All.SendAsync("insert", newJob);
@@ -92,12 +93,12 @@ namespace JobSender.Controllers
             return Ok();
         }
 
+ 
 
 
-        [HttpDelete("DeleteJob")]
+    [HttpDelete("DeleteJob")]
         public async Task<ActionResult> DeleteJob(string key)
         {
-
             RecurringJob.RemoveIfExists(_MyDbContext.Jobs.FirstOrDefault(j => j.Title==key).Title);
 
             _MyDbContext.Jobs.Remove(await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == key));
@@ -130,9 +131,17 @@ namespace JobSender.Controllers
             {
                 return StatusCode(409, "Cron-расписание задано неверно!");
             }
-            
-            
-            newValue.Start();
+
+            try
+            {
+                newValue.Start();
+            }
+            catch
+            {
+                return StatusCode(409, "Параметры задачи заданны неверно!");
+            }
+            if (!newValue.Status)
+                newValue.Pause(!newValue.Status);
             _MyDbContext.Jobs.Update(newValue);
             await _MyDbContext.SaveChangesAsync();
 
@@ -145,7 +154,7 @@ namespace JobSender.Controllers
 
 
         [HttpPost("Descriptor/{values}")]
-        public async Task<string> Descriptor(string values)
+        public async Task<string> Descriptor(string key, string values)
         {
 
             try
@@ -160,6 +169,24 @@ namespace JobSender.Controllers
             catch
             {
                 return "Cron-расписание задано неверно!";
+            }
+
+        }
+
+        [HttpPut("Pause")]
+        public async Task Pause(bool values, string key)
+        {
+            try
+            {
+                var newValue = await _MyDbContext.Jobs.FirstOrDefaultAsync(j => j.Title == key);
+                newValue.Status = !values;
+                newValue.Pause(values);
+                await _MyDbContext.SaveChangesAsync();
+
+                await _hubContext.Clients.All.SendAsync("update", key, newValue);
+            }
+            catch
+            {
             }
 
         }

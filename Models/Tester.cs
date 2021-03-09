@@ -7,6 +7,7 @@ namespace JobSender.Models
 {
     public class Tester
     {
+        public int Key { get; set; }
         public void Test() {
             var a = 0;
             a = 10;

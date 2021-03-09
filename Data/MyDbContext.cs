@@ -9,7 +9,6 @@ namespace JobSender.Data
 {
     public class MyDbContext : DbContext
     {
-        public DbSet<Message> Messages { get; set; }
         public DbSet<MyJob> Jobs{ get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
